@@ -1,4 +1,4 @@
-// Copyright 2023 Jigsaw Operations LLC
+// Copyright 2023 The Outline Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.getoutline.org/tunnel-server/ipinfo"
 	"golang.getoutline.org/tunnel-server/service"
 	"golang.getoutline.org/tunnel-server/service/metrics"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 // `now` is stubbable for testing.
@@ -130,7 +130,7 @@ func (cm *tcpConnMetrics) AddClose(status string, data metrics.ProxyMetrics, dur
 	cm.tcpServiceMetrics.proxyCollector.addTargetClient(data.TargetProxy, data.ProxyClient, cm.accessKey, cm.clientInfo)
 	cm.tcpServiceMetrics.closeConnection(status, duration, cm.accessKey, cm.clientInfo)
 	// We only track authenticated TCP connections, so ignore unauthenticated closed connections
-	// when calculating tunneltime. See https://github.com/Jigsaw-Code/outline-server/issues/1590.
+	// when calculating tunneltime. See https://github.com/OutlineFoundation/outline-server/issues/1590.
 	if cm.accessKey != "" {
 		ipKey, err := toIPKey(cm.clientAddr, cm.accessKey)
 		if err == nil {
