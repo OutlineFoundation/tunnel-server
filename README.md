@@ -1,14 +1,14 @@
 # Outline ss-server
 
-[![Build Status](https://github.com/Jigsaw-Code/outline-ss-server/actions/workflows/go.yml/badge.svg)](https://github.com/Jigsaw-Code/outline-ss-server/actions/workflows/go.yml?query=branch%3Amaster)
+[![Build Status](https://github.com/OutlineFoundation/tunnel-server/actions/workflows/go.yml/badge.svg)](https://github.com/OutlineFoundation/tunnel-server/actions/workflows/go.yml?query=branch%3Amaster)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/Jigsaw-Code/outline-ss-server)](https://goreportcard.com/report/github.com/Jigsaw-Code/outline-ss-server)
-[![Go Reference](https://pkg.go.dev/badge/github.com/Jigsaw-Code/outline-ss-server.svg)](https://pkg.go.dev/github.com/Jigsaw-Code/outline-ss-server)
+[![Go Report Card](https://goreportcard.com/badge/github.com/OutlineFoundation/tunnel-server)](https://goreportcard.com/report/github.com/OutlineFoundation/tunnel-server)
+[![Go Reference](https://pkg.go.dev/badge/golang.getoutline.org/tunnel-server.svg)](https://pkg.go.dev/golang.getoutline.org/tunnel-server)
 
 [![Mattermost](https://badgen.net/badge/Mattermost/Outline%20Community/blue)](https://community.internetfreedomfestival.org/community/channels/outline-community)
 [![Reddit](https://badgen.net/badge/Reddit/r%2Foutlinevpn/orange)](https://www.reddit.com/r/outlinevpn/)
 
-This repository has the Shadowsocks backend used by the [Outline Server](https://github.com/Jigsaw-Code/outline-server).
+This repository has the Shadowsocks backend used by the [Outline Server](https://github.com/OutlineFoundation/outline-server).
 
 The Outline Shadowsocks service allows for:
 - Multiple users on a single port.
@@ -23,7 +23,7 @@ The Outline Shadowsocks service allows for:
 
 ## How to run it
 
-Call the `outline-ss-server` command with the recommended flags, [as done by the official Outline Server](https://github.com/Jigsaw-Code/outline-server/blob/b2639d09c30a50479eddcd33b84432f57081be0c/src/shadowbox/server/outline_shadowsocks_server.ts#L91-L100):
+Call the `outline-ss-server` command with the recommended flags, [as done by the official Outline Server](https://github.com/OutlineFoundation/outline-server/blob/b2639d09c30a50479eddcd33b84432f57081be0c/src/shadowbox/server/outline_shadowsocks_server.ts#L91-L100):
 ```
 outline-ss-server -replay_history=10000 -metrics=127.0.0.1:9091 -config=$CONFIG_YML  -ip_country_db=$COUNTRY_MMDB -ip_asn_db=$ASN_MMDB
 ```
@@ -37,7 +37,7 @@ Flags:
 
 In the example, you can open https://127.0.0.1:9091 on your browser to see the exported Prometheus metrics.
 
-To fetch and update MMDB files from [DB-IP](https://db-ip.com), you can do something like the [update_mmdb.sh from the Outline Server](https://github.com/Jigsaw-Code/outline-server/blob/master/src/shadowbox/scripts/update_mmdb.sh).
+To fetch and update MMDB files from [DB-IP](https://db-ip.com), you can do something like the [update_mmdb.sh from the Outline Server](https://github.com/OutlineFoundation/outline-server/blob/master/src/shadowbox/scripts/update_mmdb.sh).
 
 
 ## Full Working Example: Try It!
@@ -50,7 +50,7 @@ On Terminal 1, from the repository directory, build and start the SS server:
 ```
 go run ./cmd/outline-ss-server -config cmd/outline-ss-server/config_example.yml -metrics localhost:9091 --replay_history=10000
 ```
-In production, you may want to specify `-ip_country_db` to get per-country metrics. See [how the Outline Server calls outline-ss-server](https://github.com/Jigsaw-Code/outline-server/blob/master/src/shadowbox/server/outline_shadowsocks_server.ts).
+In production, you may want to specify `-ip_country_db` to get per-country metrics. See [how the Outline Server calls outline-ss-server](https://github.com/OutlineFoundation/outline-server/blob/master/src/shadowbox/server/outline_shadowsocks_server.ts).
 
 
 ### Run the Prometheus scraper for metrics collection
@@ -177,7 +177,7 @@ Summary:
   ```bash
   go run github.com/go-task/task/v3/cmd/task release
   ```
-- Go to https://github.com/Jigsaw-Code/outline-ss-server/releases, review and publish the release.
+- Go to https://github.com/OutlineFoundation/tunnel-server/releases, review and publish the release.
 
 - Delete the Github token you created for the release on the [Personal Access Tokens page](https://github.com/settings/tokens).
 
