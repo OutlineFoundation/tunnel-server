@@ -21,7 +21,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
+	"golang.getoutline.org/sdk/transport"
 )
 
 // The implementations of listeners for different network types are not

@@ -1,4 +1,4 @@
-// Copyright 2020 Jigsaw Operations LLC
+// Copyright 2020 The Outline Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
-	"github.com/Jigsaw-Code/outline-sdk/transport/shadowsocks"
-	"github.com/OutlineFoundation/outline-ss-server/service"
-	"github.com/OutlineFoundation/outline-ss-server/service/metrics"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/transport/shadowsocks"
+	"golang.getoutline.org/tunnel-server/service"
+	"golang.getoutline.org/tunnel-server/service/metrics"
 	logging "github.com/op/go-logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

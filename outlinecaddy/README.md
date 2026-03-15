@@ -23,7 +23,7 @@ xcaddy build \
 In a separate window, confirm you can fetch a page over Shadowsocks:
 
 ```sh
-go run github.com/Jigsaw-Code/outline-sdk/x/examples/fetch \
+go run golang.getoutline.org/sdk/x/examples/fetch \
   -transport "ss://chacha20-ietf-poly1305:Secret1@:9000" \
   http://ipinfo.io
 ```

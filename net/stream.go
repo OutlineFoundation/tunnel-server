@@ -1,4 +1,4 @@
-// Copyright 2019 Jigsaw Operations LLC
+// Copyright 2019 The Outline Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package net
 import (
 	"io"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
+	"golang.getoutline.org/sdk/transport"
 )
 
 type DuplexConn = transport.StreamConn

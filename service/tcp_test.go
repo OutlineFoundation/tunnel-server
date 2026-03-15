@@ -1,4 +1,4 @@
-// Copyright 2018 Jigsaw Operations LLC
+// Copyright 2018 The Outline Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
-	"github.com/Jigsaw-Code/outline-sdk/transport/shadowsocks"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/transport/shadowsocks"
 	logging "github.com/op/go-logging"
 	"github.com/shadowsocks/go-shadowsocks2/socks"
 	"github.com/stretchr/testify/require"
 
-	"github.com/OutlineFoundation/outline-ss-server/service/metrics"
+	"golang.getoutline.org/tunnel-server/service/metrics"
 )
 
 func init() {
@@ -252,6 +252,12 @@ func (m *probeTestMetrics) AddProbe(status, drainResult string, clientProxyBytes
 }
 
 func (m *probeTestMetrics) AddCipherSearch(accessKeyFound bool, timeToCipher time.Duration) {
+}
+
+func (m *probeTestMetrics) snapshot() (probeData []int64, probeStatus []string, closeStatus []string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]int64(nil), m.probeData...), append([]string(nil), m.probeStatus...), append([]string(nil), m.closeStatus...)
 }
 
 func (m *probeTestMetrics) countStatuses() map[string]int {
@@ -633,29 +639,43 @@ func TestReverseReplayDefense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	n, err := conn.Write(preamble)
+	tcpConn, ok := conn.(*net.TCPConn)
+	if !ok {
+		t.Fatalf("expected *net.TCPConn, got %T", conn)
+	}
+	n, err := tcpConn.Write(preamble)
 	if n < len(preamble) {
 		t.Error(err)
 	}
-	conn.Close()
+	// Wait for the proxy to finish processing this connection before stopping the listener.
+	tcpConn.CloseWrite()
+	tcpConn.Read(make([]byte, 1))
+	tcpConn.Close()
 	listener.Close()
 	<-done
 
+	require.Eventually(t, func() bool {
+		_, _, closeStatus := testMetrics.snapshot()
+		return len(closeStatus) == 1
+	}, testTimeout, 10*time.Millisecond, "Replay should have reported an error status")
+
+	probeData, probeStatus, closeStatus := testMetrics.snapshot()
+
 	// The preamble should have been marked as a server replay.
-	if len(testMetrics.probeData) == 1 {
-		clientProxyData := testMetrics.probeData[0]
+	if len(probeData) == 1 {
+		clientProxyData := probeData[0]
 		if clientProxyData != int64(len(preamble)) {
 			t.Errorf("Unexpected probe data: %v", clientProxyData)
 		}
-		status := testMetrics.probeStatus[0]
+		status := probeStatus[0]
 		if status != "ERR_REPLAY_SERVER" {
 			t.Errorf("Unexpected TCP probe status: %s", status)
 		}
 	} else {
 		t.Error("Replay should have triggered probe detection")
 	}
-	if len(testMetrics.closeStatus) == 1 {
-		status := testMetrics.closeStatus[0]
+	if len(closeStatus) == 1 {
+		status := closeStatus[0]
 		if status != "ERR_REPLAY_SERVER" {
 			t.Errorf("Unexpected TCP close status: %s", status)
 		}

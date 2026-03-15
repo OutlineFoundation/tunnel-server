@@ -23,8 +23,8 @@ import (
 	"log/slog"
 	"strings"
 
-	outline_prometheus "github.com/Jigsaw-Code/outline-ss-server/prometheus"
-	outline "github.com/Jigsaw-Code/outline-ss-server/service"
+	outline_prometheus "golang.getoutline.org/tunnel-server/prometheus"
+	outline "golang.getoutline.org/tunnel-server/service"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/prometheus/client_golang/prometheus"
 )

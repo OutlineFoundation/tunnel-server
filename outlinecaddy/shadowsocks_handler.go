@@ -20,12 +20,12 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
-	"github.com/Jigsaw-Code/outline-sdk/transport/shadowsocks"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/transport/shadowsocks"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/mholt/caddy-l4/layer4"
 
-	outline "github.com/Jigsaw-Code/outline-ss-server/service"
+	outline "golang.getoutline.org/tunnel-server/service"
 )
 
 const ssModuleName = "layer4.handlers.shadowsocks"

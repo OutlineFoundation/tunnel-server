@@ -21,8 +21,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
-	"github.com/Jigsaw-Code/outline-sdk/x/websocket"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/x/websocket"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/mholt/caddy-l4/layer4"

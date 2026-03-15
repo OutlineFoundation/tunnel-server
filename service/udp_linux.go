@@ -1,4 +1,4 @@
-// Copyright 2024 Jigsaw Operations LLC
+// Copyright 2024 The Outline Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in comlniance with the License.
@@ -22,9 +22,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
+	"golang.getoutline.org/sdk/transport"
 
-	onet "github.com/OutlineFoundation/outline-ss-server/net"
+	onet "golang.getoutline.org/tunnel-server/net"
 )
 
 type udpListener struct {

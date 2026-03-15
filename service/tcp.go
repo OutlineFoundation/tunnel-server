@@ -1,4 +1,4 @@
-// Copyright 2018 Jigsaw Operations LLC
+// Copyright 2018 The Outline Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
-	"github.com/Jigsaw-Code/outline-sdk/transport/shadowsocks"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/transport/shadowsocks"
 	"github.com/shadowsocks/go-shadowsocks2/socks"
 
-	onet "github.com/OutlineFoundation/outline-ss-server/net"
-	"github.com/OutlineFoundation/outline-ss-server/service/metrics"
+	onet "golang.getoutline.org/tunnel-server/net"
+	"golang.getoutline.org/tunnel-server/service/metrics"
 )
 
 // TCPConnMetrics is used to report metrics on TCP connections.

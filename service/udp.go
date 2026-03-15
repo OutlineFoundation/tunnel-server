@@ -1,4 +1,4 @@
-// Copyright 2018 Jigsaw Operations LLC
+// Copyright 2018 The Outline Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Jigsaw-Code/outline-sdk/transport"
-	"github.com/Jigsaw-Code/outline-sdk/transport/shadowsocks"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/transport/shadowsocks"
 	"github.com/shadowsocks/go-shadowsocks2/socks"
 
-	"github.com/OutlineFoundation/outline-ss-server/internal/slicepool"
-	onet "github.com/OutlineFoundation/outline-ss-server/net"
+	"golang.getoutline.org/tunnel-server/internal/slicepool"
+	onet "golang.getoutline.org/tunnel-server/net"
 )
 
 // NATMetrics is used to report NAT related metrics.
@@ -177,14 +177,16 @@ func (h *associationHandler) HandleAssociation(ctx context.Context, clientConn n
 				var keyID string
 				textLazySlice := readBufPool.LazySlice()
 				unpackStart := time.Now()
-				textData, keyID, cryptoKey, err = findAccessKeyUDP(ip, textLazySlice.Acquire(), pkt, h.ciphers, h.logger)
+				textBuf := textLazySlice.Acquire()
+				textData, keyID, cryptoKey, err = findAccessKeyUDP(ip, textBuf, pkt, h.ciphers, h.logger)
 				timeToCipher := time.Since(unpackStart)
-				textLazySlice.Release()
 				h.ssm.AddCipherSearch(err == nil, timeToCipher)
 
 				if err != nil {
+					textLazySlice.Release()
 					return onet.NewConnectionError("ERR_CIPHER", "Failed to unpack initial packet", err)
 				}
+				defer textLazySlice.Release()
 				assocMetrics.AddAuthentication(keyID)
 
 				var onetErr *onet.ConnectionError
@@ -313,7 +315,7 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 					go func() {
 						assocHandle(ctx, assoc)
 						metrics.RemoveNATEntry()
-						close(assoc.doneCh)
+						_ = assoc.Close()
 					}()
 				}
 			}
@@ -347,21 +349,23 @@ type association struct {
 	clientAddr net.Addr
 	readCh     chan *packet
 	doneCh     chan struct{}
+	closeOnce  sync.Once
 }
 
 var _ net.Conn = (*association)(nil)
 
 func (a *association) Read(p []byte) (int, error) {
-	pkt, ok := <-a.readCh
-	if !ok {
+	select {
+	case <-a.doneCh:
 		return 0, net.ErrClosed
+	case pkt := <-a.readCh:
+		n := copy(p, pkt.payload)
+		pkt.done()
+		if n < len(pkt.payload) {
+			return n, io.ErrShortBuffer
+		}
+		return n, nil
 	}
-	n := copy(p, pkt.payload)
-	pkt.done()
-	if n < len(pkt.payload) {
-		return n, io.ErrShortBuffer
-	}
-	return n, nil
 }
 
 func (a *association) Write(b []byte) (n int, err error) {
@@ -369,7 +373,11 @@ func (a *association) Write(b []byte) (n int, err error) {
 }
 
 func (a *association) Close() error {
-	close(a.readCh)
+	a.closeOnce.Do(func() {
+		if a.doneCh != nil {
+			close(a.doneCh)
+		}
+	})
 	return nil
 }
 
