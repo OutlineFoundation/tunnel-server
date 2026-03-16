@@ -82,7 +82,7 @@ func (app *OutlineApp) Provision(ctx caddy.Context) error {
 		}
 	}
 
-	if err := app.defineMetrics(ctx); err != nil {
+	if err := app.defineMetrics(ctx.GetMetricsRegistry()); err != nil {
 		app.logger.Error("failed to define Prometheus metrics", "err", err)
 	}
 	// TODO: Set version at build time.
@@ -100,8 +100,8 @@ func (app *OutlineApp) Provision(ctx caddy.Context) error {
 	return nil
 }
 
-func (app *OutlineApp) defineMetrics(ctx caddy.Context) error {
-	r := prometheus.WrapRegistererWithPrefix("outline_", ctx.GetMetricsRegistry())
+func (app *OutlineApp) defineMetrics(metricsRegistry prometheus.Registerer) error {
+	r := prometheus.WrapRegistererWithPrefix("outline_", metricsRegistry)
 
 	var err error
 	buildInfo := prometheus.NewGaugeVec(prometheus.GaugeOpts{
