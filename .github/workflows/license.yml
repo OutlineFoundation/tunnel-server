@@ -54,5 +54,5 @@ jobs:
       run: |
         go run github.com/google/go-licenses check \
           --allowed_licenses=Apache-2.0,Apache-3,BSD-2-Clause,BSD-2-Clause,BSD-3-Clause,BSD-4-Clause,CC0-1.0,ISC,MIT \
-          --ignore github.com/Jigsaw-Code/outline-ss-server \
+          --ignore github.com/OutlineFoundation/outline-ss-server \
           ./...
