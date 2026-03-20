@@ -24,12 +24,12 @@ import (
 	"testing"
 	"time"
 
-	"golang.getoutline.org/sdk/transport"
-	"golang.getoutline.org/sdk/transport/shadowsocks"
 	logging "github.com/op/go-logging"
 	"github.com/shadowsocks/go-shadowsocks2/socks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/transport/shadowsocks"
 
 	onet "golang.getoutline.org/tunnel-server/net"
 )
@@ -221,6 +221,7 @@ func TestAssociationCloseWhileReading(t *testing.T) {
 		pc:         makePacketConn(),
 		clientAddr: &clientAddr,
 		readCh:     make(chan *packet),
+		doneCh:     make(chan struct{}),
 	}
 	go func() {
 		buf := make([]byte, 1024)
@@ -230,6 +231,37 @@ func TestAssociationCloseWhileReading(t *testing.T) {
 	err := assoc.Close()
 
 	assert.NoError(t, err, "Close should not panic or return an error")
+}
+
+func TestAssociationCloseReleasesQueuedPackets(t *testing.T) {
+	assoc := &association{
+		pc:         makePacketConn(),
+		clientAddr: &clientAddr,
+		readCh:     make(chan *packet, 2),
+		doneCh:     make(chan struct{}),
+	}
+	released := 0
+	assoc.readCh <- &packet{payload: []byte{1}, done: func() { released++ }}
+	assoc.readCh <- &packet{payload: []byte{2}, done: func() { released++ }}
+
+	err := assoc.Close()
+
+	require.NoError(t, err)
+	assert.Equal(t, 2, released, "Close should release queued packets")
+}
+
+func TestAssociationEnqueueAfterClose(t *testing.T) {
+	assoc := &association{
+		pc:         makePacketConn(),
+		clientAddr: &clientAddr,
+		readCh:     make(chan *packet, 1),
+		doneCh:     make(chan struct{}),
+	}
+	require.NoError(t, assoc.Close())
+
+	queued, closed := assoc.enqueue(&packet{payload: []byte{1}, done: func() {}})
+	require.False(t, queued)
+	require.True(t, closed)
 }
 
 func TestAssociationHandler_Handle_IPFilter(t *testing.T) {
