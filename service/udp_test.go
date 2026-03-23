@@ -150,15 +150,23 @@ type udpReport struct {
 
 // Stub metrics implementation for testing NAT behaviors.
 type natTestMetrics struct {
-	natEntriesAdded int
+	natEntriesAdded   int
+	natEntriesRemoved int
+	mu                sync.Mutex
 }
 
 var _ NATMetrics = (*natTestMetrics)(nil)
 
 func (m *natTestMetrics) AddNATEntry() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.natEntriesAdded++
 }
-func (m *natTestMetrics) RemoveNATEntry() {}
+func (m *natTestMetrics) RemoveNATEntry() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.natEntriesRemoved++
+}
 
 type fakeUDPAssociationMetrics struct {
 	accessKey       string
@@ -262,6 +270,47 @@ func TestAssociationEnqueueAfterClose(t *testing.T) {
 	queued, closed := assoc.enqueue(&packet{payload: []byte{1}, done: func() {}})
 	require.False(t, queued)
 	require.True(t, closed)
+}
+
+func TestPacketServeRemovesClosedAssociationsFromNAT(t *testing.T) {
+	clientConn := makePacketConn()
+	metrics := &natTestMetrics{}
+	handled := make(chan []byte, 2)
+	done := make(chan struct{})
+
+	go func() {
+		PacketServe(clientConn, func(ctx context.Context, conn net.Conn) {
+			buf := make([]byte, 16)
+			n, err := conn.Read(buf)
+			if err != nil {
+				t.Errorf("Read failed: %v", err)
+				return
+			}
+			handled <- append([]byte(nil), buf[:n]...)
+		}, metrics)
+		close(done)
+	}()
+
+	clientConn.recv <- fakePacket{addr: &clientAddr, payload: []byte{1}}
+	require.Equal(t, []byte{1}, <-handled)
+
+	require.Eventually(t, func() bool {
+		metrics.mu.Lock()
+		defer metrics.mu.Unlock()
+		return metrics.natEntriesAdded == 1 && metrics.natEntriesRemoved == 1
+	}, time.Second, 10*time.Millisecond)
+
+	clientConn.recv <- fakePacket{addr: &clientAddr, payload: []byte{2}}
+	require.Equal(t, []byte{2}, <-handled)
+
+	require.Eventually(t, func() bool {
+		metrics.mu.Lock()
+		defer metrics.mu.Unlock()
+		return metrics.natEntriesAdded == 2 && metrics.natEntriesRemoved == 2
+	}, time.Second, 10*time.Millisecond)
+
+	require.NoError(t, clientConn.Close())
+	<-done
 }
 
 func TestAssociationHandler_Handle_IPFilter(t *testing.T) {

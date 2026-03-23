@@ -295,7 +295,8 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 			pkt := &packet{payload: buffer[:n], done: lazySlice.Release}
 
 			// TODO(#19): Include server address in the NAT key as well.
-			assoc := nm.Get(clientAddr.String())
+			clientAddrKey := clientAddr.String()
+			assoc := nm.Get(clientAddrKey)
 			if assoc == nil {
 				assoc = &association{
 					pc:         clientConn,
@@ -309,19 +310,20 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 				}
 
 				var existing bool
-				assoc, existing = nm.Add(clientAddr.String(), assoc)
+				assoc, existing = nm.Add(clientAddrKey, assoc)
 				if !existing {
 					metrics.AddNATEntry()
 					go func() {
 						assocHandle(ctx, assoc)
-						metrics.RemoveNATEntry()
 						_ = assoc.Close()
+						nm.Del(clientAddrKey)
+						metrics.RemoveNATEntry()
 					}()
 				}
 			}
 			select {
 			case <-assoc.doneCh:
-				nm.Del(clientAddr.String())
+				nm.Del(clientAddrKey)
 				pkt.done()
 			default:
 				queued, closed := assoc.enqueue(pkt)
@@ -329,7 +331,7 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 					return
 				}
 				if closed {
-					nm.Del(clientAddr.String())
+					nm.Del(clientAddrKey)
 					pkt.done()
 					return
 				}
