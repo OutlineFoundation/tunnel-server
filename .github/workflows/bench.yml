@@ -1,0 +1,38 @@
+name: Benchstat
+
+on:
+  pull_request:
+    branches: [ master ]
+
+permissions:  # added using https://github.com/step-security/secure-workflows
+  contents: read
+
+jobs:
+
+  bench:
+    name: Performance regression check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (new)
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: '${{ github.workspace }}/go.mod'
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Benchmark against GITHUB_BASE_REF
+        run: |
+         go install golang.org/x/perf/cmd/benchstat@latest
+         echo "New Commit:"
+         git log -1 --format="%H"
+         go test -bench=. -benchmem -benchtime=100ms -count=10 ./... > /tmp/new.txt
+         git reset --hard HEAD
+         git checkout $GITHUB_BASE_REF
+         echo "Base Commit:"
+         git log -1 --format="%H"
+         go test -bench=. -benchmem -benchtime=100ms -count=10 ./... > /tmp/old.txt
+         $GOBIN/benchstat /tmp/old.txt /tmp/new.txt
