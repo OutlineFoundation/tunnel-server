@@ -304,11 +304,6 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 					readCh:     make(chan *packet, 5),
 					doneCh:     make(chan struct{}),
 				}
-				if err != nil {
-					slog.Error("Failed to handle association", slog.Any("err", err))
-					return
-				}
-
 				var existing bool
 				assoc, existing = nm.Add(clientAddrKey, assoc)
 				if !existing {
