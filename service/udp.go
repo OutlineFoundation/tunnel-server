@@ -26,9 +26,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/shadowsocks/go-shadowsocks2/socks"
 	"golang.getoutline.org/sdk/transport"
 	"golang.getoutline.org/sdk/transport/shadowsocks"
-	"github.com/shadowsocks/go-shadowsocks2/socks"
 
 	"golang.getoutline.org/tunnel-server/internal/slicepool"
 	onet "golang.getoutline.org/tunnel-server/net"
@@ -295,7 +295,8 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 			pkt := &packet{payload: buffer[:n], done: lazySlice.Release}
 
 			// TODO(#19): Include server address in the NAT key as well.
-			assoc := nm.Get(clientAddr.String())
+			clientAddrKey := clientAddr.String()
+			assoc := nm.Get(clientAddrKey)
 			if assoc == nil {
 				assoc = &association{
 					pc:         clientConn,
@@ -303,28 +304,34 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 					readCh:     make(chan *packet, 5),
 					doneCh:     make(chan struct{}),
 				}
-				if err != nil {
-					slog.Error("Failed to handle association", slog.Any("err", err))
-					return
-				}
-
 				var existing bool
-				assoc, existing = nm.Add(clientAddr.String(), assoc)
+				assoc, existing = nm.Add(clientAddrKey, assoc)
 				if !existing {
 					metrics.AddNATEntry()
 					go func() {
 						assocHandle(ctx, assoc)
-						metrics.RemoveNATEntry()
 						_ = assoc.Close()
+						nm.DelIfMatches(clientAddrKey, assoc)
+						metrics.RemoveNATEntry()
 					}()
 				}
 			}
 			select {
 			case <-assoc.doneCh:
-				nm.Del(clientAddr.String())
-			case assoc.readCh <- pkt:
+				nm.DelIfMatches(clientAddrKey, assoc)
+				pkt.done()
 			default:
+				queued, closed := assoc.enqueue(pkt)
+				if queued {
+					return
+				}
+				if closed {
+					nm.DelIfMatches(clientAddrKey, assoc)
+					pkt.done()
+					return
+				}
 				slog.Debug("Dropping packet due to full read queue")
+				pkt.done()
 				// TODO: Add a metric to track number of dropped packets.
 			}
 		}()
@@ -350,6 +357,7 @@ type association struct {
 	readCh     chan *packet
 	doneCh     chan struct{}
 	closeOnce  sync.Once
+	mu         sync.Mutex
 }
 
 var _ net.Conn = (*association)(nil)
@@ -372,10 +380,40 @@ func (a *association) Write(b []byte) (n int, err error) {
 	return a.pc.WriteTo(b, a.clientAddr)
 }
 
+func (a *association) enqueue(pkt *packet) (queued bool, closed bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	select {
+	case <-a.doneCh:
+		return false, true
+	default:
+	}
+
+	select {
+	case a.readCh <- pkt:
+		return true, false
+	default:
+		return false, false
+	}
+}
+
 func (a *association) Close() error {
 	a.closeOnce.Do(func() {
 		if a.doneCh != nil {
 			close(a.doneCh)
+		}
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		for {
+			select {
+			case pkt := <-a.readCh:
+				if pkt != nil {
+					pkt.done()
+				}
+			default:
+				return
+			}
 		}
 	})
 	return nil
@@ -503,6 +541,18 @@ func (m *natmap) Del(clientAddr string) {
 	defer m.Unlock()
 
 	if _, ok := m.associations[clientAddr]; ok {
+		delete(m.associations, clientAddr)
+	}
+}
+
+// DelIfMatches deletes the entry for clientAddr only if the stored
+// association is the same object as expected. This prevents a finishing
+// goroutine from evicting a newer association that reused the same key.
+func (m *natmap) DelIfMatches(clientAddr string, expected *association) {
+	m.Lock()
+	defer m.Unlock()
+
+	if m.associations[clientAddr] == expected {
 		delete(m.associations, clientAddr)
 	}
 }
