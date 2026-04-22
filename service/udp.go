@@ -311,14 +311,14 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 					go func() {
 						assocHandle(ctx, assoc)
 						_ = assoc.Close()
-						nm.Del(clientAddrKey)
+						nm.DelIfMatches(clientAddrKey, assoc)
 						metrics.RemoveNATEntry()
 					}()
 				}
 			}
 			select {
 			case <-assoc.doneCh:
-				nm.Del(clientAddrKey)
+				nm.DelIfMatches(clientAddrKey, assoc)
 				pkt.done()
 			default:
 				queued, closed := assoc.enqueue(pkt)
@@ -326,7 +326,7 @@ func PacketServe(clientConn net.PacketConn, assocHandle AssociationHandleFunc, m
 					return
 				}
 				if closed {
-					nm.Del(clientAddrKey)
+					nm.DelIfMatches(clientAddrKey, assoc)
 					pkt.done()
 					return
 				}
@@ -541,6 +541,18 @@ func (m *natmap) Del(clientAddr string) {
 	defer m.Unlock()
 
 	if _, ok := m.associations[clientAddr]; ok {
+		delete(m.associations, clientAddr)
+	}
+}
+
+// DelIfMatches deletes the entry for clientAddr only if the stored
+// association is the same object as expected. This prevents a finishing
+// goroutine from evicting a newer association that reused the same key.
+func (m *natmap) DelIfMatches(clientAddr string, expected *association) {
+	m.Lock()
+	defer m.Unlock()
+
+	if m.associations[clientAddr] == expected {
 		delete(m.associations, clientAddr)
 	}
 }
