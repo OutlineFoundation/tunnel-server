@@ -23,10 +23,11 @@ import (
 	"log/slog"
 	"strings"
 
-	outline_prometheus "golang.getoutline.org/tunnel-server/prometheus"
-	outline "golang.getoutline.org/tunnel-server/service"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/prometheus/client_golang/prometheus"
+
+	outline_prometheus "golang.getoutline.org/tunnel-server/prometheus"
+	outline "golang.getoutline.org/tunnel-server/service"
 )
 
 const (
@@ -41,7 +42,7 @@ func init() {
 		ID: outlineModuleName,
 		New: func() caddy.Module {
 			app := new(OutlineApp)
-			app.replayCache = replayCache
+			app.replayCache = &replayCache
 			return app
 		},
 	})
@@ -56,7 +57,7 @@ type OutlineApp struct {
 	Handlers          ConnectionHandlers `json:"connection_handlers,omitempty"`
 
 	logger      *slog.Logger
-	replayCache outline.ReplayCache
+	replayCache *outline.ReplayCache
 	metrics     outline.ServiceMetrics
 	buildInfo   *prometheus.GaugeVec
 }

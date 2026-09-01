@@ -20,10 +20,10 @@ import (
 	"log/slog"
 	"time"
 
-	"golang.getoutline.org/sdk/transport"
-	"golang.getoutline.org/sdk/transport/shadowsocks"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/mholt/caddy-l4/layer4"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/transport/shadowsocks"
 
 	outline "golang.getoutline.org/tunnel-server/service"
 )
@@ -101,7 +101,7 @@ func (h *ShadowsocksHandler) Provision(ctx caddy.Context) error {
 	ciphers := outline.NewCipherList()
 	ciphers.Update(cipherList)
 
-	replayCache, ok := ctx.Value(replayCacheCtxKey).(outline.ReplayCache)
+	replayCache, ok := ctx.Value(replayCacheCtxKey).(*outline.ReplayCache)
 	if !ok {
 		h.logger.Warn("Handler configured outside Outline app; replay cache not available.")
 	}
@@ -114,7 +114,7 @@ func (h *ShadowsocksHandler) Provision(ctx caddy.Context) error {
 		outline.WithLogger(h.logger),
 		outline.WithCiphers(ciphers),
 		outline.WithMetrics(h.metrics),
-		outline.WithReplayCache(&replayCache),
+		outline.WithReplayCache(replayCache),
 	)
 	return nil
 }
