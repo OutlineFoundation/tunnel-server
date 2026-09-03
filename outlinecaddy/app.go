@@ -77,10 +77,12 @@ func (app *OutlineApp) Provision(ctx caddy.Context) error {
 
 	app.logger.Info("provisioning app instance")
 
-	if app.ShadowsocksConfig != nil {
-		if err := app.replayCache.Resize(app.ShadowsocksConfig.ReplayHistory); err != nil {
-			return fmt.Errorf("failed to configure replay history with capacity %d: %v", app.ShadowsocksConfig.ReplayHistory, err)
-		}
+	// Only validate the replay history here. The shared replay cache is resized
+	// in Start(), once the whole replacement config has provisioned successfully;
+	// resizing it here would alter replay protection for the currently running
+	// app if a later provisioning step fails and the reload is rejected.
+	if app.ShadowsocksConfig != nil && app.ShadowsocksConfig.ReplayHistory > outline.MaxCapacity {
+		return fmt.Errorf("replay history capacity %d exceeds the maximum of %d", app.ShadowsocksConfig.ReplayHistory, outline.MaxCapacity)
 	}
 
 	if err := app.defineMetrics(ctx.GetMetricsRegistry()); err != nil {
@@ -143,6 +145,11 @@ func registerCollector[T prometheus.Collector](registerer prometheus.Registerer,
 
 // Start starts the App.
 func (app *OutlineApp) Start() error {
+	if app.ShadowsocksConfig != nil {
+		if err := app.replayCache.Resize(app.ShadowsocksConfig.ReplayHistory); err != nil {
+			return fmt.Errorf("failed to configure replay history with capacity %d: %v", app.ShadowsocksConfig.ReplayHistory, err)
+		}
+	}
 	app.logger.Debug("started app instance")
 	return nil
 }
