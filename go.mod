@@ -6,7 +6,7 @@ toolchain go1.24.8
 
 require (
 	github.com/go-task/task/v3 v3.34.1
-	github.com/go-viper/mapstructure/v2 v2.2.1
+	github.com/go-viper/mapstructure/v2 v2.4.0
 	github.com/google/addlicense v1.1.1
 	github.com/google/go-licenses v1.6.0
 	github.com/goreleaser/goreleaser v1.18.2
