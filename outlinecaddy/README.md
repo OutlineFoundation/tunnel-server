@@ -16,7 +16,7 @@ From this directory, build and run a custom Caddy binary with this Go module plu
 xcaddy build \
   --with github.com/iamd3vil/caddy_yaml_adapter \
   --with github.com/mholt/caddy-l4 \
-  --with github.com/Jigsaw-Code/outline-ss-server/outlinecaddy
+  --with github.com/OutlineFoundation/outline-ss-server/outlinecaddy
 ./caddy run --config examples/simple.yaml --adapter yaml --watch
 ```
 

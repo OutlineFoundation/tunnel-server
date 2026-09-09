@@ -149,14 +149,14 @@ go run github.com/go-task/task/v3/cmd/task test
 
 You can benchmark the cipher finding code with
 ```
-go test -cpuprofile cpu.prof -memprofile mem.prof -bench . -benchmem -run=^$ github.com/Jigsaw-Code/outline-ss-server/shadowsocks
+go test -cpuprofile cpu.prof -memprofile mem.prof -bench . -benchmem -run=^$ github.com/OutlineFoundation/outline-ss-server/shadowsocks
 ```
 
 You can inspect the CPU or memory profiles with `go tool pprof cpu.prof` or `go tool pprof mem.prof`, and then enter `web` on the prompt.
 
 ## Release
 
-We use [GoReleaser](https://goreleaser.com/) to build and upload binaries to our [GitHub releases](https://github.com/Jigsaw-Code/outline-ss-server/releases).
+We use [GoReleaser](https://goreleaser.com/) to build and upload binaries to our [GitHub releases](https://github.com/OutlineFoundation/outline-ss-server/releases).
 
 Summary:
 - Test the build locally:
