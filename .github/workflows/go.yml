@@ -28,8 +28,21 @@ permissions:  # added using https://github.com/step-security/secure-workflows
 jobs:
 
   build:
-    name: Build
+    name: Build (${{ matrix.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Each entry is a separate Go module; `./...` from the repository root
+        # does not reach outlinecaddy.
+        include:
+          - name: tunnel-server
+            dir: .
+          - name: outlinecaddy
+            dir: outlinecaddy
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
     steps:
 
     - name: Check out code into the Go module directory
@@ -40,7 +53,8 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
       with:
-        go-version-file: '${{ github.workspace }}/go.mod'
+        go-version-file: '${{ matrix.dir }}/go.mod'
+        cache-dependency-path: '${{ matrix.dir }}/go.sum'
 
     - name: Get dependencies
       run: |
