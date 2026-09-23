@@ -38,7 +38,11 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
       with:
-        go-version-file: '${{ github.workspace }}/go.mod'
+        # This job builds linting tools rather than the project, so it does not
+        # follow either module's Go version. setup-go pins GOTOOLCHAIN=local,
+        # so the toolchain here must already satisfy the tools: actionlint
+        # v1.7.12 requires Go >= 1.25, the root module is still on Go 1.24.
+        go-version: 'stable'
 
     - name: actionlint
       run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -color
