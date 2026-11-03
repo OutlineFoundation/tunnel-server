@@ -2,6 +2,8 @@ module golang.getoutline.org/tunnel-server/outlinecaddy
 
 go 1.25.1
 
+godebug multipathtcp=0 // CVE-2026-98432 mitigation
+
 require (
 	github.com/caddyserver/caddy/v2 v2.11.4
 	github.com/iamd3vil/caddy_yaml_adapter v0.0.0-20200503183711-d479c29b475a
