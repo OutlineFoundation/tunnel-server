@@ -2,6 +2,8 @@ module golang.getoutline.org/tunnel-server
 
 go 1.24.1
 
+godebug multipathtcp=0 // CVE-2026-98432 mitigation
+
 toolchain go1.24.8
 
 require (
