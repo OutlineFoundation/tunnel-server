@@ -22,12 +22,12 @@ import (
 	"net"
 	"net/http"
 
-	"golang.getoutline.org/sdk/transport"
-	"golang.getoutline.org/sdk/x/websocket"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"github.com/mholt/caddy-l4/layer4"
 	"go.uber.org/zap"
+	"golang.getoutline.org/sdk/transport"
+	"golang.getoutline.org/sdk/x/websocket"
 )
 
 const wsModuleName = "http.handlers.websocket2layer4"
