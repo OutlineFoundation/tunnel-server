@@ -15,6 +15,7 @@
 package outlinecaddy
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -119,9 +120,17 @@ func (h WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, _ ca
 		slog.String("path", r.URL.Path),
 		slog.Any("remote_addr", r.RemoteAddr))
 
+	// gorilla/websocket requires the writer to implement [http.Hijacker]
+	// directly. Caddy may hand us a wrapper (e.g. for idle timeouts) that only
+	// reaches the underlying connection through [http.ResponseController].
+	if _, ok := w.(http.Hijacker); !ok {
+		w = hijackableResponseWriter{ResponseWriter: w}
+	}
 	conn, err := websocket.Upgrade(w, r, nil)
 	if err != nil {
+		// The upgrader has already written an HTTP error response.
 		h.logger.Error("failed to upgrade", "err", err)
+		return nil
 	}
 	defer conn.Close()
 	if clientIpStr, ok := caddyhttp.GetVar(r.Context(), caddyhttp.ClientIPVarKey).(string); ok {
@@ -137,6 +146,23 @@ func (h WebSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, _ ca
 	cx := layer4.WrapConnection(conn, []byte{}, h.zlogger)
 	cx.SetVar(outlineConnectionTypeCtxKey, h.Type)
 	return h.compiledHandler.Handle(cx, nil)
+}
+
+// hijackableResponseWriter exposes [http.Hijacker] on an [http.ResponseWriter]
+// that only supports hijacking through [http.ResponseController].
+type hijackableResponseWriter struct {
+	http.ResponseWriter
+}
+
+var _ http.Hijacker = hijackableResponseWriter{}
+
+func (w hijackableResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return http.NewResponseController(w.ResponseWriter).Hijack()
+}
+
+// Unwrap keeps [http.ResponseController] working for callers further down.
+func (w hijackableResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 // TODO: Create a dedicated `ClientConn` struct with `ClientAddr` and `Conn`.
