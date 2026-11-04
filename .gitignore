@@ -34,3 +34,7 @@ go.work.sum
 
 # Custom caddy binary
 /caddy/caddy
+
+# Direnv
+.envrc
+/.direnv
