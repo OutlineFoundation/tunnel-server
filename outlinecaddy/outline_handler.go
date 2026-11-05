@@ -20,9 +20,9 @@ import (
 	"log/slog"
 	"net"
 
-	"golang.getoutline.org/sdk/transport"
 	"github.com/caddyserver/caddy/v2"
 	"github.com/mholt/caddy-l4/layer4"
+	"golang.getoutline.org/sdk/transport"
 )
 
 const (

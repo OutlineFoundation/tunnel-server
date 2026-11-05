@@ -24,12 +24,12 @@ package main
 import (
 	caddycmd "github.com/caddyserver/caddy/v2/cmd"
 
-	_ "golang.getoutline.org/tunnel-server/outlinecaddy"
 	_ "github.com/caddyserver/caddy/v2/modules/standard"
 	_ "github.com/iamd3vil/caddy_yaml_adapter"
 	_ "github.com/mholt/caddy-l4"
 	_ "github.com/mholt/caddy-l4/layer4"
 	_ "github.com/mholt/caddy-l4/modules/l4http"
+	_ "golang.getoutline.org/tunnel-server/outlinecaddy"
 )
 
 func main() {
